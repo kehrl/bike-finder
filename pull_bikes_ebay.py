@@ -13,7 +13,7 @@ def get_ebay_postings(city):
 
     api = Finding(config_file='ebay.yaml')
 
-    n_pages = 5
+    n_pages = 40
     posting_ids = []
     for n_page in range(n_pages):
         api_request = {
@@ -86,7 +86,7 @@ def get_new_posting_attrs(posting_ids):
     files = os.listdir('data')
     for name in files:
         if name.endswith('.jpg') and name.startswith('ebay'):
-            if int(name[-9:-4]) > n:
+            if int(name[-9:-4]) >= n:
                 n = int(name[-9:-4]) + 1
     print("Starting at image",n)
 

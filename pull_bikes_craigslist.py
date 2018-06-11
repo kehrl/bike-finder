@@ -77,7 +77,7 @@ def check_against_saved_postings(posting_URLs, city):
     return new_posting_URLs, deleted_posting_URLs
 
 
-def get_new_posting_attrs(posting_URLs, city, slp_min = 60, slp_max = 120):
+def get_new_posting_attrs(posting_URLs, city, slp_min = 60, slp_max = 90):
     
     # Pull data from posting_URLs
     n_items = len(posting_URLs)
@@ -101,12 +101,12 @@ def get_new_posting_attrs(posting_URLs, city, slp_min = 60, slp_max = 120):
     files = os.listdir('data')
     for name in files:
         if name.endswith('.jpg') and name.startswith(city):
-            if int(name[-9:-4]) > j:
+            if int(name[-9:-4]) >= j:
                 j = int(name[-9:-4]) + 1
     print("Starting at image",j)
 
     fid = open('data/'+city+'_craigslist_postings.csv','a')
-    for i in range(100):#n_items):
+    for i in range(20):#n_items):
         print("Posting",i,"of",n_items)
         time.sleep(np.random.randint(slp_min,slp_max) + np.random.rand())
         response = http.request('GET',posting_URLs[i])
