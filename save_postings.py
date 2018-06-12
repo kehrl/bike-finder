@@ -19,8 +19,8 @@ if not(database_exists(engine_craigslist.url)):
 if not(database_exists(engine_ebay.url)):
     create_database(engine_ebay.url)
 
-craigslist_postings = pd.read_csv('data/seattle_craigslist_postings.csv', index_col=0)
-ebay_postings = pd.read_csv('data/ebay_postings.csv', index_col=0)
+craigslist_postings = pd.read_csv('data/seattle_craigslist_postings.csv', index_col = 0, sep = ',')
+ebay_postings = pd.read_csv('data/ebay_postings.csv', index_col = 0, sep = ',')
 
 craigslist_postings.to_sql('craigslist_postings', engine_craigslist, if_exists='replace')
 ebay_postings.to_sql('ebay_postings', engine_ebay, if_exists='replace')
