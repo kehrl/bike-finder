@@ -7,17 +7,20 @@ import numpy as np
 import psycopg2
 import matplotlib.pyplot as plt
 import matplotlib
+import os
 
 user = 'kehrl'                   
 host = 'localhost'
 
 # Categories
-bike_labels = ['not bike','road bike', 'mountain bike', 'tandem', 'bmx', 'cruiser', \
-               'kids', 'hybrid','triathlon','other']
+bike_labels = ['road bike', 'mountain bike', 'not bike', 'kids'] # not bike, tandem, triathlon, hybrid, bmx, kids bike, cruiser bike
+
+# Labeled data directory
+data_labeled_dir = '/Users/kehrl/Code/bike-finder/data/labeled/'
 
 # Databases
 dbname_ebay = 'ebay_db'                         # Pulling data
-dbname_craigslist = 'craigslist_db'   # Pulling data
+dbname_craigslist = 'craigslist_db'             # Pulling data
 dbname_labeled = 'labeled_db'                   # Pushining data
 
 engine_labeled = create_engine('postgres://%s@localhost/%s'%(user,dbname_labeled))
@@ -42,41 +45,17 @@ craigslist_labeled = craigslist_unlabeled.copy(deep = True)
 craigslist_labeled.biketype = ''
 
 # Label bikes
-n_craigslist = {} # Save number of bikes labeled based on different categories
-n_ebay = {}
 for label in bike_labels:
-
-    # Label ebay bikes by provided biketype
-    if not(label in ['not bike', 'other']):
-        ebay_labeled.loc[ebay_unlabeled.biketype.str.contains(label, na=False),\
-                'biketype'] = label
     
-    sum_ebay = ebay_unlabeled.biketype.str.contains(label, na=False).sum()
-    sum_craigslist = 0
-    
-    for labeled, n_count, sum_label in zip([ebay_labeled, craigslist_labeled], \
-            [n_ebay, n_craigslist], [sum_ebay, sum_craigslist]): 
+    files = os.listdir(data_labeled_dir+label)
+    for file in files:
+        if 'craigslist' in file:
+            ind = np.where(craigslist_labeled.imagefile == file)
+            craigslist_labeled.biketype.iloc[ind] = label          
+        else:
+            ind = np.where(ebay_labeled.imagefile == file)
+            ebay_labeled.biketype.iloc[ind] = label    
         
-        if label == 'not bike':
-            # Search for key terms that describe "not bike" in item description and title
-            notbike_labels = ['exercise bike', 'exercise bicycle', 'shoes'] #scooter
-            notbike_labels = ['shoes']    
-            
-            for notbike_label in notbike_labels:
-                labeled.loc[labeled.description.str.contains(notbike_label, na=False),'biketype'] = label  
-                labeled.loc[labeled.title.str.contains(notbike_label, na=False),'biketype'] = label    
-
-        elif not(label == 'other'):
-            # Search for label in item description
-            labeled.loc[labeled.description.str.contains(label, na=False),'biketype'] = label
-    
-            # Search for label in titles
-            labeled.loc[labeled.title.str.contains(label, na=False),'biketype'] = label
-                    
-        # Sum number of labeled postings for pie charts
-        n_count[label] = sum_label + labeled.title.str.contains(label, na=False).sum() + \
-            labeled.title.str.contains(label, na=False).sum()
-
 # Concat labeled craigslist and ebay bikes into one pandas data frame
 craigslist_labeled['website'] = 'craigslist'
 ebay_labeled['website'] = 'ebay' 
@@ -93,11 +72,13 @@ matplotlib.rc('font',family='sans-serif',size=10)
 
 values_craigslist = np.zeros([len(bike_labels),])
 values_ebay = np.zeros([len(bike_labels),])
-for i in range(len(bike_labels)-2):
-    values_craigslist[i] = n_craigslist[bike_labels[i]]
-    values_ebay[i] = n_ebay[bike_labels[i]]
-values_craigslist[-1] = len(craigslist_labeled) - values_craigslist.sum()
-values_ebay[-1] = len(ebay_labeled) - values_ebay.sum()
+for i in range(len(bike_labels)):
+    if not(bike_labels[i] == 'other'):
+        values_craigslist[i] = craigslist_labeled.groupby('biketype').size()[bike_labels[i]]
+        values_ebay[i] = ebay_labeled.groupby('biketype').size()[bike_labels[i]]
+    else:
+        values_craigslist[i] = craigslist_labeled.groupby('biketype').size()['']
+        values_ebay[i] = ebay_labeled.groupby('biketype').size()['']    
 
 # Ebay plot
 plt.figure()
