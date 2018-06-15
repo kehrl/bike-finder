@@ -39,7 +39,8 @@ def save_images_by_category(category, labeled_data, data_dir, train_dir, test_di
         # Get indices from craigslist
         if len(ind_craigslist) < n_train + n_test:
             ind = ind_craigslist.copy()
-            ind = np.r_[ind, np.random.choice(ind_ebay, n_train + n_test - len(ind), replace = False)]
+            ind = np.r_[ind, np.random.choice(ind_ebay, n_train + n_test - len(ind), \
+                    replace = False)]
         else:
             ind = np.random.choice(ind_craigslist, n_train + n_test, replace = False)
         
@@ -69,7 +70,8 @@ def save_images_by_category(category, labeled_data, data_dir, train_dir, test_di
        ind_sample_train = np.random.choice(n_category, n_sample_train, replace = False)
        ind_sample_test = np.setdiff1d(np.arange(n_category), ind_sample_train)
        
-       # TODO: Generate additional images
+       # Generate duplicate images, which will be modified later in train_model.py by 
+       # ImageDataGenerator
        ind_train = np.random.choice(ind_sample_train, n_train)
        ind_test = np.random.choice(ind_sample_test, n_test)
        
@@ -79,21 +81,29 @@ def save_images_by_category(category, labeled_data, data_dir, train_dir, test_di
        
     # Save images
     image_file_previous = []
+    
     n = 0
     for image_file in np.sort(images_train):
+        # If image is already present in directory, we need to save it with a new name.
         if image_file == image_file_previous:
-            shutil.copy(data_dir+image_file, train_dir+category+'/'+image_file[0:-4]+'_'+str(n)+'.jpg')
+            shutil.copy(data_dir+image_file, train_dir+category+'/'+image_file[0:-4]+\
+                    '_'+str(n)+'.jpg')
             n += 1
+        # Otherwise, just save image.
         else:
             shutil.copy(data_dir+image_file, train_dir+category+'/'+image_file)
             n = 0
             image_file_previous = str(image_file)
+    
     n = 0
     for image_file in np.sort(images_test):
+        # If image is already present in directory, we need to save it with a new name.
         if image_file == image_file_previous:
-            shutil.copy(data_dir+image_file, test_dir+category+'/'+image_file[0:-4]+'_'+str(n)+'.jpg')
+            shutil.copy(data_dir+image_file, test_dir+category+'/'+image_file[0:-4]+\
+                    '_'+str(n)+'.jpg')
             n += 1
         else:
+        # Otherwise, just save image.
             shutil.copy(data_dir+image_file, test_dir+category+'/'+image_file)
             n = 0
             image_file_previous = str(image_file)
@@ -101,26 +111,30 @@ def save_images_by_category(category, labeled_data, data_dir, train_dir, test_di
     return images_train, images_test
 
 
-# Get data from SQL database
-con = psycopg2.connect(database = 'labeled_db', user = 'kehrl')
-labeled_data = pd.read_sql('SELECT * FROM labeled_data', con = con)
+###########################################################################
 
-# Get bike categories
-categories = labeled_data.biketype.unique()
+if __name__ == "__main__":
 
-# Check if train and test dirs exist
-# if not, create the dirs; if so, delete contents for re-generation
-if os.path.exists(train_data_dir):
-    shutil.rmtree(train_data_dir)
-if os.path.exists(test_data_dir):
-    shutil.rmtree(test_data_dir)
-os.makedirs(train_data_dir)
-os.makedirs(test_data_dir)
+    # Get data from SQL database
+    con = psycopg2.connect(database = 'labeled_db', user = 'kehrl')
+    labeled_data = pd.read_sql('SELECT * FROM labeled_data', con = con)
+
+    # Get bike categories
+    categories = labeled_data.biketype.unique()
+
+    # Check if train and test dirs exist
+    # if not, create the dirs; if so, delete contents for re-generation
+    if os.path.exists(train_data_dir):
+        shutil.rmtree(train_data_dir)
+    if os.path.exists(test_data_dir):
+        shutil.rmtree(test_data_dir)
+    os.makedirs(train_data_dir)
+    os.makedirs(test_data_dir)
     
-# Copy images to train and test directories
-images_train = {}
-images_test = {}
-for category in categories:
-    images_train[category], images_test[category] = save_images_by_category(category, \
-            labeled_data, main_dir, train_data_dir, test_data_dir, n_train, n_test)
+    # Copy images to train and test directories
+    images_train = {}
+    images_test = {}
+    for category in categories:
+        images_train[category], images_test[category] = save_images_by_category(category, \
+                labeled_data, main_dir, train_data_dir, test_data_dir, n_train, n_test)
     
