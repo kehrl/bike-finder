@@ -10,20 +10,22 @@
 
 from keras.applications import InceptionV3
 from keras.applications import VGG16
-
 from keras.models import Sequential
-
 from keras.utils import to_categorical
 from keras.layers import Dropout, Flatten, Dense
 from keras import optimizers
 from keras.preprocessing.image import ImageDataGenerator
 from keras.applications import imagenet_utils
 from keras.applications.inception_v3 import preprocess_input
-
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping
+
+from sklearn.metrics import roc_curve, auc
+import matplotlib.pyplot as plt
+import matplotlib
 
 import numpy as np
 import os
+from scipy import interp
 
 # Data inputs
 main_dir = '/Users/kehrl/Code/bike-finder/data/'
@@ -35,7 +37,7 @@ n_classes = len(os.listdir(train_data_dir))
 
 # Model inputs
 model_name = 'vgg16'
-batch_size = 50
+batch_size = 16
 epochs = 50
 top_model_weights_path = 'weights/my_model'
 
@@ -61,7 +63,7 @@ def save_bottleneck_features(network, image_shape, batch_size, test_data_dir, tr
 
     datagen = ImageDataGenerator(
         rescale=1./255,
-        rotation_range = 10,
+        rotation_range = 30,
         width_shift_range = 0.2,
         height_shift_range = 0.2,
         shear_range = 0,
@@ -88,7 +90,7 @@ def save_bottleneck_features(network, image_shape, batch_size, test_data_dir, tr
         target_size = image_shape,
         batch_size = batch_size,
         class_mode = None,
-        shuffle = False,
+        shuffle = False
         )
             
     if not(os.path.isfile('weights/bottleneck_features_test.npy')):
@@ -115,39 +117,79 @@ def train_top_model(train_data, train_y, test_data, test_y, n_classes, top_model
    
     model = Sequential()
     model.add(Flatten(input_shape = train_data.shape[1:]))
-    model.add(Dense(2056, activation = 'relu'))
-    model.add(Dropout(0.2))
-    model.add(Dense(1028, activation = 'relu'))
+    model.add(Dense(256, activation = 'relu'))
+    model.add(Dropout(0.75))
     model.add(Dense(n_classes, activation = 'softmax'))
 
-    opt = optimizers.SGD(lr = 1.0e-4, momentum=0.9)
+    opt = optimizers.RMSprop(lr=2e-4)
     model.compile(optimizer = opt, loss = 'categorical_crossentropy',
                  metrics = ['accuracy'])
 
     checkpointer = ModelCheckpoint(filepath='model.best.hdf5', verbose=1, save_best_only=False)
    
-    model.fit(train_data, train_y,
+    history = model.fit(train_data, train_y,
              epochs=epochs,
              batch_size=batch_size,
              validation_data = [test_data, test_y],
              callbacks = [checkpointer])
-
+    
+    # Save model results for predictions
     model.save_weights(top_model_weights_path)
 
-    return model  
+    return model, history  
 
-if (not os.path.isfile('weights/bottleneck_features_train.npy')) or (not os.path.isfile('weights/bottleneck_features_test.npy')):
-    train_data, test_data, train_y, train_labels, test_y = \
-        save_bottleneck_features(model_options[model_name], image_shape, \
-        batch_size, test_data_dir, train_data_dir)
-else:
-    train_data = np.load('weights/bottleneck_features_train.npy')
-    test_data = np.load('weights/bottleneck_features_test.npy')
-    train_y = np.load('weights/train_y.npy')
-    test_y = np.load('weights/test_y.npy') 
-    train_labels = np.load('weights/train_labels.npy')
+###########################################################################
 
-model = train_top_model(train_data, train_y, test_data, test_y, n_classes, top_model_weights_path)
+if __name__ == "__main__":
 
-#preds = model.predict(image)
-#P = imagenet_utils.decode_predictions(preds)
+    if (not os.path.isfile('weights/bottleneck_features_train.npy')) or (not os.path.isfile('weights/bottleneck_features_test.npy')):
+        train_data, test_data, train_y, train_labels, test_y = \
+                save_bottleneck_features(model_options[model_name], image_shape, \
+                batch_size, test_data_dir, train_data_dir)
+    else:
+        train_data = np.load('weights/bottleneck_features_train.npy')
+        test_data = np.load('weights/bottleneck_features_test.npy')
+        train_y = np.load('weights/train_y.npy')
+        test_y = np.load('weights/test_y.npy') 
+        train_labels = np.load('weights/train_labels.npy')
+
+    model, history = train_top_model(train_data, train_y, test_data, test_y, n_classes, top_model_weights_path)
+
+    # Make some plots
+    # Loss over epochs
+    matplotlib.rc('font',family='sans-serif',size=22)
+    plt.plot(history.history['val_loss'], lw = 2)
+    plt.plot(history.history['loss'], lw = 2)
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.xlim([0,100])
+    plt.legend(['test', 'train'], loc='upper right')
+    plt.subplots_adjust(top = 0.98, bottom = 0.15, left = 0.15, right = 0.94)
+    plt.savefig('figures/loss_vs_epoch.png', format = 'PNG')
+    plt.close()
+
+    # ROC curve
+    matplotlib.rc('font',family='sans-serif',size=22)
+    # Compute macro-averaged ROC
+    pred_y = model.predict(test_data)
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    for i in range(n_classes):
+        fpr[i], tpr[i], thresholds = roc_curve(test_y[:, i], pred_y[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+    # First aggregate all false positive rates
+    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+    mean_tpr = np.zeros_like(all_fpr)
+    for i in range(n_classes):
+        mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+    # Finally average it and compute AUC
+    mean_tpr /= n_classes
+
+    plt.plot([0, 1], [0, 1], 'k--', lw=2)
+    plt.plot(np.r_[0, all_fpr], np.r_[0, mean_tpr], lw=2)
+    plt.subplots_adjust(top = 0.98, bottom = 0.15, left = 0.15, right = 0.94)
+    plt.ylabel('True positive rate'); plt.xlabel('False positive rate')
+    plt.xlim([-0.01, 1]); plt.ylim([0,1.01])
+    plt.savefig('figures/ROC.png', format = 'PNG')
+    plt.close()
