@@ -136,6 +136,7 @@ def train_top_model(train_data, train_y, test_data, test_y, n_classes, top_model
 
     return model  
 
+# create bottleneck features if they don't already exist.
 if (not os.path.isfile('weights/bottleneck_features_train.npy')) or (not os.path.isfile('weights/bottleneck_features_test.npy')):
     train_data, test_data, train_y, train_labels, test_y = \
         save_bottleneck_features(model_options[model_name], image_shape, \
