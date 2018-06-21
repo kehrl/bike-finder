@@ -13,7 +13,7 @@ def get_ebay_postings(city):
 
     api = Finding(config_file='ebay.yaml')
 
-    n_pages = 40
+    n_pages = 20
     posting_ids = []
     for n_page in range(n_pages):
         api_request = {
@@ -94,47 +94,49 @@ def get_new_posting_attrs(posting_ids):
     j = 0
     for posting_id in posting_ids:
         print("Posting",j,"of",n_items)
-        response = api.execute('GetSingleItem', {'ItemID': posting_id,
+        try:
+            response = api.execute('GetSingleItem', {'ItemID': posting_id,
                   'version': '981',
                   'IncludeSelector': ['PictureDetails','ItemSpecifics'],
                   'outputSelector': 'PictureURLLarge'})
-        item = response.reply.Item
+            item = response.reply.Item
         
-        try:
-            bike_attrs['imageURL'].append(item.PictureURL[0])
-            imagefile = 'ebay_image'+'{0:05d}'.format(n)+'.jpg'
-            urllib.request.urlretrieve(item.PictureURL[0], 'data/'+imagefile)
-            
-            bike_attrs['imagefile'].append(imagefile)
             try:
-                bike_attrs['location'].append(item.Location.replace(',',':'))
-            except:
-                locations.append([])
-            bike_attrs['URL'].append(item.ViewItemURLForNaturalSearch)
-            bike_attrs['itemId'].append(item.ItemID)
+                bike_attrs['imageURL'].append(item.PictureURL[0].replace(',',' '))
+                imagefile = 'ebay_image'+'{0:05d}'.format(n)+'.jpg'
+                urllib.request.urlretrieve(item.PictureURL[0], 'data/'+imagefile)
             
-            bike_attrs['title'].append(item.Title.replace(',',' '))
-            bike_attrs['price'].append(item.ConvertedCurrentPrice.value)
-            bike_attrs['endtime'].append(str(item.EndTime.date()))
-            bike_attrs['biketype'].append(get_biketype(item).replace(',',' '))
+                bike_attrs['imagefile'].append(imagefile)
+                try:
+                    bike_attrs['location'].append(item.Location.replace(',',':'))
+                except:
+                    locations.append([])
+                bike_attrs['URL'].append(item.ViewItemURLForNaturalSearch)
+                bike_attrs['itemId'].append(item.ItemID)
+            
+                bike_attrs['title'].append(item.Title.replace(',',' '))
+                bike_attrs['price'].append(item.ConvertedCurrentPrice.value)
+                bike_attrs['endtime'].append(str(item.EndTime.date()))
+                bike_attrs['biketype'].append(get_biketype(item).replace(',',' '))
 
                     
-            response = api.execute('GetSingleItem', {'ItemID': posting_id,
+                response = api.execute('GetSingleItem', {'ItemID': posting_id,
                   'version': '981',
                   'IncludeSelector': ['TextDescription']})
-            item = response.reply.Item
-            bike_attrs['description'].append(item.Description.replace('\n',' ').replace(',',' '))
+                item = response.reply.Item
+                bike_attrs['description'].append(item.Description.replace('\n',' ').replace(',',' '))
             
-            j += 1
-            n += 1
+                j += 1
+                n += 1
             
-            for key in bike_attrs.keys():
-                fid.write(bike_attrs[key][-1]+', ')
-            fid.write('\n')
+                for key in bike_attrs.keys():
+                    fid.write(bike_attrs[key][-1]+', ')
+                fid.write('\n')
             
+            except:
+                pass
         except:
-            pass
-            
+            print("Item no longer exists")            
     fid.close()
 
     return bike_attrs
@@ -157,8 +159,12 @@ def get_biketype(item):
 
     return biketype   
 
-posting_ids = get_ebay_postings('seattle')
+###########################################################################
 
-new_posting_ids, deleted_posting_ids = check_against_saved_postings(posting_ids)
+if __name__ == "__main__":
 
-bike_attrs = get_new_posting_attrs(new_posting_ids)
+    posting_ids = get_ebay_postings('seattle')
+
+    new_posting_ids, deleted_posting_ids = check_against_saved_postings(posting_ids)
+
+    bike_attrs = get_new_posting_attrs(new_posting_ids)

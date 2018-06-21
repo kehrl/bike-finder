@@ -11,7 +11,7 @@ import os
 from collections import defaultdict
 import numpy as np
 
-def get_craigslist_postings(city,slp_min = 10, slp_max = 30):
+def get_craigslist_postings(city,slp_min = 30, slp_max = 45):
  
     http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED',ca_certs=certifi.where())
 
@@ -49,8 +49,8 @@ def get_craigslist_postings(city,slp_min = 10, slp_max = 30):
 def check_against_saved_postings(posting_URLs, city):
 
     # Open csv file 
-    if os.path.exists('data/'+city+'_craigslist_postings.csv'):
-        fid = open('data/'+city+'_craigslist_postings.csv','r')
+    if os.path.exists('data/'+city+'_craigslist_postings_current.csv'):
+        fid = open('data/'+city+'_craigslist_postings_current.csv','r')
         lines = fid.readlines()
     
         # Get saved URLs
@@ -76,8 +76,25 @@ def check_against_saved_postings(posting_URLs, city):
 
     return new_posting_URLs, deleted_posting_URLs
 
+def remove_deleted_attrs(deleted_posting_URLs, city):
 
-def get_new_posting_attrs(posting_URLs, city, slp_min = 60, slp_max = 90):
+    # Open csv file 
+    if os.path.exists('data/'+city+'_craigslist_postings_current.csv'):
+        fid = open('data/'+city+'_craigslist_postings_current.csv','r')
+        lines = fid.readlines()
+        fid.close()
+        
+        fid = open('data/'+city+'_craigslist_postings_current.csv','w')
+        for line in lines:
+            if line.split(',')[2].replace(' ','') in deleted_posting_URLs:
+                print("Deleting",line.split(',')[2].replace(' ','')) 
+            else:
+                fid.write(line)
+        fid.close()
+        
+    return deleted_posting_URLs
+
+def get_new_posting_attrs(posting_URLs, city, slp_min = 30, slp_max = 45, get_images = True):
     
     # Pull data from posting_URLs
     n_items = len(posting_URLs)
@@ -87,8 +104,8 @@ def get_new_posting_attrs(posting_URLs, city, slp_min = 60, slp_max = 90):
                 'timeposted','latitude','longitude','biketype']:
         bike_attrs[var] = []
     
-    if not(os.path.exists('data/'+city+'_craigslist_postings.csv')):
-        fid = open('data/'+city+'_craigslist_postings.csv','w')
+    if not(os.path.exists('data/'+city+'_craigslist_postings_current.csv')):
+        fid = open('data/'+city+'_craigslist_postings_current.csv','w')
         for key in bike_attrs.keys():
             fid.write(key+',')
         fid.write('\n')
@@ -105,25 +122,46 @@ def get_new_posting_attrs(posting_URLs, city, slp_min = 60, slp_max = 90):
                 j = int(name[-9:-4]) + 1
     print("Starting at image",j)
 
-    fid = open('data/'+city+'_craigslist_postings.csv','a')
-    for i in range(20):#n_items):
+    
+    for i in range(0,100):
         print("Posting",i,"of",n_items)
+        fid = open('data/'+city+'_craigslist_postings_current.csv','a')
         time.sleep(np.random.randint(slp_min,slp_max) + np.random.rand())
-        response = http.request('GET',posting_URLs[i])
-        soup = BeautifulSoup(response.data, "lxml")
-        images = soup('img')
+        try:
+            response = http.request('GET',posting_URLs[i])
+            soup = BeautifulSoup(response.data, "lxml")
+            images = soup('img')
+            url_exists = True
+        except:
+            url_exists = False
+        
+        # Restart numbering if we hit 9999
+        if j == 99999:
+            j = 0
         
         # Save first image and its URL. It takes too much time to process all images
         # for a bike.
-        if len(images) > 0:
+        if (url_exists) and (len(images) > 0):
             imageURL = images[0]['src'] 
-            imagefile = city+'_craigslist_image'+'{0:05d}'.format(j)+'.jpg'
-            urllib.request.urlretrieve(imageURL, 'data/'+imagefile)
-            j += 1
+            # Only pull images if desired; otherwise we will just grab 
+            # it from the internet when labeling bikes
+            if get_images:
+                imagefile = city+'_craigslist_image'+'{0:05d}'.format(j)+'.jpg'
+                while os.path.exists('data/'+imagefile):
+                    j += 1
+                    imagefile = city+'_craigslist_image'+'{0:05d}'.format(j)+'.jpg'
+                urllib.request.urlretrieve(imageURL, 'data/'+imagefile)
+                j += 1
+                time.sleep(np.random.randint(slp_min,slp_max) + np.random.rand())
+            else:
+                imagefile = 'None'
         
-            time.sleep(np.random.randint(slp_min,slp_max) + np.random.rand())
-            bike_attrs['title'].append(soup.find('span',{'id':'titletextonly'}).text.strip().replace(',',' '))
-            bike_attrs['price'].append(soup.find('span',{'class':'price'}).text.strip()[1:])
+            # Get bike attributes
+            bike_attrs['title'].append(soup.find('span',{'id':'titletextonly'}).text.strip().replace(',',' '))            
+            try:
+                bike_attrs['price'].append(soup.find('span',{'class':'price'}).text.strip()[1:])
+            except:
+                bike_attrs['price'].append('')
             bike_attrs['description'].append(soup.find('section',{'id':'postingbody'}).text.strip().replace('\n',' ').replace(',',' '))
             bike_attrs['imageURL'].append(imageURL)
             bike_attrs['imagefile'].append(imagefile)
@@ -140,7 +178,7 @@ def get_new_posting_attrs(posting_URLs, city, slp_min = 60, slp_max = 90):
                 fid.write(bike_attrs[key][-1]+', ')
             fid.write('\n')
                     
-    fid.close()
+        fid.close()
          
     return bike_attrs
 
@@ -158,20 +196,21 @@ def get_lat_long(loc_string):
 
     return lat,long
 
+###########################################################################
 
-def remove_attrs(old_postings, city):
+if __name__ == "__main__":
 
-    return old_postings
-
-parser = argparse.ArgumentParser(
-    description="Find craigslist bike postings", parents=())
-parser.add_argument("-c", "--city", default='seattle',
-    help='Search city')
+    parser = argparse.ArgumentParser(
+          description="Find craigslist bike postings", parents=())
+    parser.add_argument("-c", "--city", default='seattle',
+          help='Search city')
      
-args, extra_args = parser.parse_known_args()
+    args, extra_args = parser.parse_known_args()
 
-posting_URLs = get_craigslist_postings(args.city)
+    posting_URLs = get_craigslist_postings(args.city)
 
-new_posting_URLs, deleted_posting_URLs = check_against_saved_postings(posting_URLs, args.city)
+    new_posting_URLs, deleted_posting_URLs = check_against_saved_postings(posting_URLs, args.city)
 
-bike_attrs = get_new_posting_attrs(new_posting_URLs, args.city)
+    deleted_posting_URLs = remove_deleted_attrs(deleted_posting_URLs, args.city)
+
+    bike_attrs = get_new_posting_attrs(new_posting_URLs, args.city)
