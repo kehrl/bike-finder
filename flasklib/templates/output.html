@@ -9,7 +9,7 @@
     <meta name="author" content="">
     <link rel="icon" href="../../favicon.ico">
 
-    <title>Starter Template for Bootstrap</title>
+    <title>BestBike</title>
 
     <!-- Bootstrap core CSS -->
     <link href="../static/css/bootstrap.min.css" rel="stylesheet">
@@ -41,7 +41,7 @@
 
     <div class="container">
       <div class="starter-template">
-        <h2>Seattle Bike Barn</h2>
+        <h2>Seattle BestBike</h2>
       </div>
     </div>
 
@@ -69,10 +69,14 @@
           </div>
         </div>
       </div>
-    </div>  
+    </div>
     
     <div class = "container">
-      <p><br>Add search terms (optional).</p> 
+        <p><font color="red">{{ error_message }}</font></p>
+    </div>
+    
+    <div class = "container">
+      <p><br>Add search term (optional).</p> 
       <div class="form-group">
         <div class="col-sm-4">
           <form  action="/output" method="POST" enctype="multipart/form-data">
@@ -93,9 +97,9 @@
       </div>
 
       <table class="table table-hover">
-      <tr><th>Craigslist Posting</th><th>Probability</th><th>Price</th></tr>
+      <tr><th>Craigslist Posting</th></tr>
       {% for bike in bikes %}
-      <tr><td><a href={{ bike['URL'].strip() }}>{{ bike['title'] }}</a> <br> <img src={{ bike['imageURL'] }} alt="Unavailable image" border=3 height=200></img></td><td>{{bike['match']}}%</td><td>${{bike['price'].strip()}}</td></tr>
+      <tr><td><a href={{ bike['URL'].strip() }}>{{ bike['title'] }}</a> <br> <img src={{ bike['imageURL'] }} alt="Unavailable image" border=3 height=200></img></td></tr>
       {% endfor %}
       </table>
 

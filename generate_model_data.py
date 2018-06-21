@@ -8,8 +8,8 @@ import shutil
 # import imagelib
 
 # Inputs
-n_train = 250 # per bike category
-n_test = int(float(n_train)*0.1) # per bike category
+n_train = 2000 # per bike category
+n_test = 75
 
 # Output dirs
 main_dir = '/Users/kehrl/Code/bike-finder/data/'
@@ -59,52 +59,61 @@ def save_images_by_category(category, labeled_data, data_dir, train_dir, test_di
         
     # If less data is available than needed, pull all data and generate additional images.    
     else:
-       # Get available data
-       images = category_data['imagefile']
+        # Get available data
+        images = category_data['imagefile']
        
-       # Generate additional data
-       # Calculate number of additional images needed
-       n_sample_train = int(n_train/(n_train + n_test) * n_category)
+        # Get craigslist postings for testing
+        ind_craigslist = np.where(category_data['website'] == 'craigslist')[0]
+        ind_ebay = np.where(category_data['website'] == 'ebay')[0]
        
-       # Get images that will be used for generating additional data
-       ind_sample_train = np.random.choice(n_category, n_sample_train, replace = False)
-       ind_sample_test = np.setdiff1d(np.arange(n_category), ind_sample_train)
+        # Generate additional data
+        # Calculate number of additional images needed
+        n_sample_train = int(n_train/(n_train + n_test) * n_category)
        
-       # Generate duplicate images, which will be modified later in train_model.py by 
-       # ImageDataGenerator
-       ind_train = np.random.choice(ind_sample_train, n_train)
-       ind_test = np.random.choice(ind_sample_test, n_test)
+        # Get images that will be used for generating additional data
+        if len(ind_craigslist) < n_test:
+            ind_test = np.r_[ind_craigslist, np.random.choice(ind_ebay, \
+                n_test - len(ind_craigslist), replace = False)]
+        else:
+            ind_test = np.random.choice(ind_craigslist, n_test, replace = False)
+        ind_sample_train = np.setdiff1d(np.arange(n_category), ind_test)
        
-       # Get images (including repeating ones)
-       images_train = category_data['imagefile'].iloc[ind_train]
-       images_test = category_data['imagefile'].iloc[ind_test]
+        # Generate duplicate images, which will be modified later in train_model.py by 
+        # ImageDataGenerator
+        ind_train = np.random.choice(ind_sample_train, n_train)
+       
+        # Get images (including repeating ones)
+        images_train = category_data['imagefile'].iloc[ind_train]
+        images_test = category_data['imagefile'].iloc[ind_test]
        
     # Save images
     image_file_previous = []
     
     n = 0
     for image_file in np.sort(images_train):
+        image_name = os.path.split(image_file)
         # If image is already present in directory, we need to save it with a new name.
         if image_file == image_file_previous:
-            shutil.copy(data_dir+image_file, train_dir+category+'/'+image_file[0:-4]+\
+            shutil.copy(data_dir+image_file, train_dir+category+'/'+image_name[-1][0:-4]+\
                     '_'+str(n)+'.jpg')
             n += 1
         # Otherwise, just save image.
         else:
-            shutil.copy(data_dir+image_file, train_dir+category+'/'+image_file)
+            shutil.copy(data_dir+image_file, train_dir+category+'/'+image_name[-1])
             n = 0
             image_file_previous = str(image_file)
     
     n = 0
     for image_file in np.sort(images_test):
         # If image is already present in directory, we need to save it with a new name.
+        image_name = os.path.split(image_file)
         if image_file == image_file_previous:
-            shutil.copy(data_dir+image_file, test_dir+category+'/'+image_file[0:-4]+\
+            shutil.copy(data_dir+image_file, test_dir+category+'/'+image_name[-1][0:-4]+\
                     '_'+str(n)+'.jpg')
             n += 1
         else:
-        # Otherwise, just save image.
-            shutil.copy(data_dir+image_file, test_dir+category+'/'+image_file)
+            # Otherwise, just save image.
+            shutil.copy(data_dir+image_file, test_dir+category+'/'+image_name[-1])
             n = 0
             image_file_previous = str(image_file)
         
@@ -116,8 +125,8 @@ def save_images_by_category(category, labeled_data, data_dir, train_dir, test_di
 if __name__ == "__main__":
 
     # Get data from SQL database
-    con = psycopg2.connect(database = 'labeled_db', user = 'kehrl')
-    labeled_data = pd.read_sql('SELECT * FROM labeled_data', con = con)
+    con = psycopg2.connect(database = 'bike_db', user = 'kehrl')
+    labeled_data = pd.read_sql('SELECT * FROM training_postings', con = con)
 
     # Get bike categories
     categories = labeled_data.biketype.unique()

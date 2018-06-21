@@ -46,12 +46,12 @@ def find_similar_bikes(input_image_file):
     according to cosine similarity.
     '''
     
-    pred = get_bottleneck_features([input_image_file])
+    pred = intermediate_model_features(get_bottleneck_features([input_image_file]))
     
     if not(os.path.isfile('weights/bottleneck_features_test.npy')):
         sys.exit("Bottleneck features aren't saved.")
     else:
-        bottleneck_features = np.load('weights/bottleneck_features_craigslist.npy')
+        bottleneck_features = np.load('weights/intermediate_bottleneck_features_craigslist.npy')
         image_files = np.load('weights/craigslist_images.npy')
     
     sims = np.zeros([bottleneck_features.shape[0], ])

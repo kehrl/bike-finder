@@ -69,6 +69,14 @@ def cesareans_output():
             image_file.save(image_path)
         
             biketype = bikelib.predict_bike_type(image_path, dir='')
+    
+    if biketype == 'other':
+        error_message = "I can't find any matches. Please try another bike image."
+    if biketype == 'None selected':
+        error_message = "A bike type or image file must be selected."
+    else:
+        error_message = ''
+    print("Error",error_message)
         
     print(request.method)
     print(biketype)
@@ -88,5 +96,5 @@ def cesareans_output():
                 URL=query_results.iloc[i]['URL'], \
                 match=query_results.iloc[i]['match']))
     n_bikes = len(bikes)
-    return render_template("output.html", bikes = bikes, n_bikes = n_bikes, biketype_final = biketype)
+    return render_template("output.html", bikes = bikes, n_bikes = n_bikes, biketype_final = biketype, error_message = error_message)
 
