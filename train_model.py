@@ -145,19 +145,6 @@ def train_top_model(train_data, train_y, test_data, test_y, n_classes, top_model
 
     return model, history  
 
-# create bottleneck features if they don't already exist.
-if (not os.path.isfile('weights/bottleneck_features_train.npy')) or (not os.path.isfile('weights/bottleneck_features_test.npy')):
-    train_data, test_data, train_y, train_labels, test_y = \
-        save_bottleneck_features(model_options[model_name], image_shape, \
-        batch_size, test_data_dir, train_data_dir)
-else:
-    train_data = np.load('weights/bottleneck_features_train.npy')
-    test_data = np.load('weights/bottleneck_features_test.npy')
-    train_y = np.load('weights/train_y.npy')
-    test_y = np.load('weights/test_y.npy') 
-    train_labels = np.load('weights/train_labels.npy')
->>>>>>> cea2faa8cad23b7c2559942987bf709c39002864
-
 if __name__ == "__main__":
 
     if (not os.path.isfile('weights/bottleneck_features_train.npy')) or (not os.path.isfile('weights/bottleneck_features_test.npy')):
@@ -175,7 +162,7 @@ if __name__ == "__main__":
 
     # Make some plots
     # Loss over epochs
-    matplotlib.rc('font',family='sans-serif',size=22)
+    #matplotlib.rc('font',family='sans-serif',size=22)
     plt.plot(history.history['val_loss'], lw = 2)
     plt.plot(history.history['loss'], lw = 2)
     plt.ylabel('loss')
@@ -187,7 +174,7 @@ if __name__ == "__main__":
     plt.close()
 
     # ROC curve
-    matplotlib.rc('font',family='sans-serif',size=22)
+    matplotlib.rc('font',size=22)
     # Compute macro-averaged ROC
     pred_y = model.predict(test_data)
     fpr = dict()
@@ -197,15 +184,18 @@ if __name__ == "__main__":
         fpr[i], tpr[i], thresholds = roc_curve(test_y[:, i], pred_y[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
     # First aggregate all false positive rates
-    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
-    mean_tpr = np.zeros_like(all_fpr)
+    mean_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+    mean_tpr = np.zeros_like(mean_fpr)
     for i in range(n_classes):
-        mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+        mean_tpr += interp(mean_fpr, fpr[i], tpr[i])
     # Finally average it and compute AUC
     mean_tpr /= n_classes
+    auc_mean = auc(mean_fpr, mean_tpr)
+    print("AUC is", auc_mean)
 
     plt.plot([0, 1], [0, 1], 'k--', lw=2)
-    plt.plot(np.r_[0, all_fpr], np.r_[0, mean_tpr], lw=2)
+    plt.plot(np.r_[0, mean_fpr], np.r_[0, mean_tpr], lw=3, color = 'b')
+
     plt.subplots_adjust(top = 0.98, bottom = 0.15, left = 0.15, right = 0.94)
     plt.ylabel('True positive rate'); plt.xlabel('False positive rate')
     plt.xlim([-0.01, 1]); plt.ylim([0,1.01])
