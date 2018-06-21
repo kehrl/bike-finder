@@ -145,7 +145,18 @@ def train_top_model(train_data, train_y, test_data, test_y, n_classes, top_model
 
     return model, history  
 
-###########################################################################
+# create bottleneck features if they don't already exist.
+if (not os.path.isfile('weights/bottleneck_features_train.npy')) or (not os.path.isfile('weights/bottleneck_features_test.npy')):
+    train_data, test_data, train_y, train_labels, test_y = \
+        save_bottleneck_features(model_options[model_name], image_shape, \
+        batch_size, test_data_dir, train_data_dir)
+else:
+    train_data = np.load('weights/bottleneck_features_train.npy')
+    test_data = np.load('weights/bottleneck_features_test.npy')
+    train_y = np.load('weights/train_y.npy')
+    test_y = np.load('weights/test_y.npy') 
+    train_labels = np.load('weights/train_labels.npy')
+>>>>>>> cea2faa8cad23b7c2559942987bf709c39002864
 
 if __name__ == "__main__":
 
