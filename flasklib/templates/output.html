@@ -34,49 +34,68 @@
   <body>
 
     <nav class="navbar navbar-inverse navbar-fixed-top">
-"templates/bikes.html" 89L, 3618C
         </div><!--/.nav-collapse -->
       </div>
     </nav>
 <br><br>
 
- <div class="container">
-    <div class="starter-template">
-        <h2>seattle bike finder</h2>
-        <p></p>
+    <div class="container">
+      <div class="starter-template">
+        <h2>Seattle Bike Barn</h2>
+      </div>
     </div>
 
     <div class = "container">
-
-      <form  action="/output" method="GET">
+      <form  action="/output" method="POST" enctype="multipart/form-data">
+        <p>Choose a bike type OR upload an image.</p>
         <div class="form-group">
-          <label for="bike type">Bike type:</label>
-          <select class="form-control" id="biketype" name='biketype'>
-              <option>road bike</option>
-              <option>mountain bike</option>
+          <div class="col-sm-4">
+            <label for="biketype">Bike type:</label>
+            <select class="form-control" id="biketype" name='biketype'>
+              <option>None selected</option>
+              <option>bmx</option>
+              <option>cruiser</option>
               <option>kids</option>
-          </select>
+              <option>mountain</option>
+              <option>road</option>
+	            <option>tandem</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <button type="submit" class="btn btn-default btn-lg">Find bikes!</button>
+       
+        <div class="col-sm-4">
+            <label for="bikeimage">Bike image (JPG):</label>
+            <input type="file" name="file" id="file" placeholder="Upload image..." accept=".jpg, .jpeg">
+          </div>
         </div>
-      </form>
+      </div>
+    </div>  
+    
+    <div class = "container">
+      <p><br>Add search terms (optional).</p> 
+      <div class="form-group">
+        <div class="col-sm-4">
+          <form  action="/output" method="POST" enctype="multipart/form-data">
+            <label for="searchterm">Search term:</label>
+            <input type="text" id="searchterm" name='searchterm' class="form-control">
+            <p><br></p>
+            <button type="submit" class="btn btn-default btn-lg">Find bikes!</button>
+          </div>
+        </div>
+      </div>
     </div>
-    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
-    <script src="../static/js/bootstrap.min.js"></script>
-
-  </div> <!-- /.container-->
 
     <div class="container">
       <div class="starter-template">
-        <h3></h3>
-        <p class="lead">.<br> </p>
+        <p <br><br> </p>
+        <h4>There are <b>{{ n_bikes }} {{ biketype_final }} bikes</b> that meet your search criteria.</h4>
+        <p class="lead"></p>
       </div>
 
       <table class="table table-hover">
-      <tr><th></th><th>Posting</th><th>Price</th></tr>
+      <tr><th>Craigslist Posting</th><th>Probability</th><th>Price</th></tr>
       {% for bike in bikes %}
-      <tr><td><a href={{ bike['URL'].strip() }}>Go to posting!</a></td><td>{{ bike['title'] }} <br> <img src={{ bike['imageURL'] }} alt="Unavailable image" border=3 height=200></img></td><td>${{bike['price'].strip()}}</td></tr>
+      <tr><td><a href={{ bike['URL'].strip() }}>{{ bike['title'] }}</a> <br> <img src={{ bike['imageURL'] }} alt="Unavailable image" border=3 height=200></img></td><td>{{bike['match']}}%</td><td>${{bike['price'].strip()}}</td></tr>
       {% endfor %}
       </table>
 
