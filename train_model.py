@@ -37,7 +37,7 @@ n_classes = len(os.listdir(train_data_dir))
 
 # Model inputs
 model_name = 'vgg16'
-batch_size = 16
+batch_size = 10
 epochs = 50
 top_model_weights_path = 'weights/my_model'
 
@@ -61,7 +61,8 @@ def save_bottleneck_features(network, image_shape, batch_size, test_data_dir, tr
 
     model = network(weights="imagenet", include_top = False)
 
-    datagen = ImageDataGenerator(
+    # Data augmentation for training set only
+    train_datagen = ImageDataGenerator(
         rescale=1./255,
         rotation_range = 30,
         width_shift_range = 0.2,
@@ -70,8 +71,14 @@ def save_bottleneck_features(network, image_shape, batch_size, test_data_dir, tr
         zoom_range = 0.2,
         fill_mode = 'nearest'
         )
+    
+    # No data augmentation for the test set
+    test_datagen = ImageDataGenerator(
+        rescale=1./255,
+        fill_mode = 'nearest'
+        )
 
-    train_generator = datagen.flow_from_directory(
+    train_generator = train_datagen.flow_from_directory(
         train_data_dir,
         target_size = image_shape,
         batch_size = batch_size,
@@ -85,7 +92,7 @@ def save_bottleneck_features(network, image_shape, batch_size, test_data_dir, tr
     else:
         train_data = np.load('weights/bottleneck_features_train.npy')
 
-    test_generator = datagen.flow_from_directory(
+    test_generator = test_datagen.flow_from_directory(
         test_data_dir,
         target_size = image_shape,
         batch_size = batch_size,
@@ -117,8 +124,8 @@ def train_top_model(train_data, train_y, test_data, test_y, n_classes, top_model
    
     model = Sequential()
     model.add(Flatten(input_shape = train_data.shape[1:]))
-    model.add(Dense(256, activation = 'relu'))
-    model.add(Dropout(0.75))
+    model.add(Dense(256, activation = 'relu', name = 'dense_11'))
+    model.add(Dropout(0.5))
     model.add(Dense(n_classes, activation = 'softmax'))
 
     opt = optimizers.RMSprop(lr=2e-4)
