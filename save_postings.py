@@ -6,21 +6,25 @@ import psycopg2
 import pandas as pd
 
 username = 'kehrl'
-dbname_craigslist = 'craigslist_db'
-dbname_ebay = 'ebay_db'
+dbname = 'bike_db'
 
-engine_craigslist = create_engine('postgres://%s@localhost/%s'%(username,dbname_craigslist))
-engine_ebay = create_engine('postgres://%s@localhost/%s'%(username,dbname_ebay))
-print(engine_craigslist.url)
-print(engine_ebay.url)
+engine = create_engine('postgres://%s@localhost/%s'%(username,  dbname))
 
-if not(database_exists(engine_craigslist.url)):
-    create_database(engine_craigslist.url)
-if not(database_exists(engine_ebay.url)):
-    create_database(engine_ebay.url)
+if not(database_exists(engine.url)):
+    create_database(engine.url)
 
 craigslist_postings = pd.read_csv('data/seattle_craigslist_postings.csv', index_col = 0, sep = ',')
+craigslist_postings_current = pd.read_csv('data/seattle_craigslist_postings_current.csv', \
+          index_col = 0, sep = ',')
 ebay_postings = pd.read_csv('data/ebay_postings.csv', index_col = 0, sep = ',')
 
-craigslist_postings.to_sql('craigslist_postings', engine_craigslist, if_exists='replace')
-ebay_postings.to_sql('ebay_postings', engine_ebay, if_exists='replace')
+# Do some data cleanup
+for postings in [craigslist_postings, ebay_postings]:
+    postings['imagefile'] = postings['imagefile'].str.strip()
+
+# Remove duplicates
+craigslist_postings_current = craigslist_postings_current.drop_duplicates(subset = 'URL')
+
+craigslist_postings.to_sql('all_craigslist_postings', engine, if_exists='replace')
+craigslist_postings_current.to_sql('current_craigslist_postings', engine, if_exists='replace')
+ebay_postings.to_sql('all_ebay_postings', engine, if_exists='replace')
