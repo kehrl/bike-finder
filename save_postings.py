@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 
+'''
+Save Craigslist and ebay postings to SQL database bike_db.
+
+Laura Kehrl
+'''
+
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 import psycopg2
 import pandas as pd
 
-username = 'kehrl'
+username = open('postgres_user','r').readlines()[0].split()[0]
 dbname = 'bike_db'
 
 engine = create_engine('postgres://%s@localhost/%s'%(username,  dbname))

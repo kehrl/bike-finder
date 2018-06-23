@@ -1,5 +1,12 @@
 #!/usr/bin/env python 
 
+'''
+Predict bike types for Craigslist postings and update 
+database.
+
+Laura Kehrl
+'''
+
 import pandas as pd
 import numpy as np
 import psycopg2
@@ -24,7 +31,7 @@ from flasklib import bikelib
 # Cutoff for identifying bikes for softmax classifier
 cutoff = 0.5 
 
-user = 'kehrl'                   
+user = open('postgres_user','r').readlines()[0].split()[0]                   
 host = 'localhost'
 
 # Data directory
@@ -62,6 +69,13 @@ model_options = {
 
 # SQL database for saving predicted values
 def get_bottleneck_features(network, image_files, image_shape):
+    '''
+    bottleneck_features = get_bottleneck_features(network, image_files, 
+          image_shape)
+    
+    Get bottleneck features for the last max pool layer of trained CNN.
+    '''
+    
     print('Getting bottleneck features...')
 
     model = network(weights="imagenet", include_top = False)

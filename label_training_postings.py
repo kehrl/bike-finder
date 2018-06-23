@@ -1,5 +1,12 @@
 #!/usr/bin/env python 
 
+'''
+Create SQL table of labeled postings for trainings. The label is taken from
+the folder where the image is located.
+
+Laura Kehrl
+'''
+
 from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
@@ -8,7 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import os
 
-user = 'kehrl'                   
+user = open('postgres_user','r').readlines()[0].split()[0]                  
 host = 'localhost'
 
 # Categories

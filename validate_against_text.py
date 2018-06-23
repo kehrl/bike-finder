@@ -8,7 +8,7 @@ import keras
 from flasklib import bikelib
 import os
 
-user = 'kehrl'                   
+user = open('postgres_user','r').readlines()[0].split()[0]                 
 host = 'localhost'
 
 # Databases
