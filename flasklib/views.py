@@ -9,7 +9,7 @@ import psycopg2
 from flasklib import bikelib
 import os
 
-user = 'kehrl' #add your username here (same as previous postgreSQL)            
+user = open('postgres_user','r').readlines()[0].split()[0]          
 host = 'localhost'
 dbname = 'bike_db'
 db = create_engine('postgres://%s%s/%s'%(user,host,dbname))
@@ -39,7 +39,7 @@ def bike_page():
 
 @app.route('/db_fancy')
 def cesareans_page_fancy():
-    sql_query = 'SELECT title, biketype, price, match, "imageURL", "URL" FROM predicted_postings ORDER BY match DESC;'
+    sql_query = 'SELECT title, biketype, price, match, timeposted, "imageURL", "URL" FROM predicted_postings ORDER BY match DESC;'
     query_results = pd.read_sql_query(sql_query,con)
     bikes = []
     for i in range(0,query_results.shape[0]):
@@ -51,6 +51,10 @@ def cesareans_page_fancy():
 @app.route('/input')
 def cesareans_input():
     return render_template("input.html")
+    
+@app.route('/about')
+def about():
+    return render_template("bikes.html")
 
 @app.route('/output', methods=['POST','GET'])
 def cesareans_output():
@@ -83,7 +87,7 @@ def cesareans_output():
     
     #print('imagefile',len(imagefile))
     #Select the desired bike type from the bike database
-    query = 'SELECT title, biketype, price, match, description, "imageURL", "URL" FROM predicted_postings WHERE biketype=%s ORDER BY match DESC;' % (str("'"+biketype+"'"))
+    query = 'SELECT title, biketype, price, match, description, timeposted, imagefile, "imageURL", "URL" FROM predicted_postings WHERE biketype=%s ORDER BY match DESC;' % (str("'"+biketype+"'"))
     query_results = pd.read_sql_query(query,con)
     
     print(query_results)
@@ -94,6 +98,8 @@ def cesareans_output():
                 imageURL=query_results.iloc[i]['imageURL'], \
                 price=query_results.iloc[i]['price'], \
                 URL=query_results.iloc[i]['URL'], \
+                imagefile=query_results.iloc[i]['imagefile'], \
+                timeposted=query_results.iloc[i]['timeposted'], \
                 match=query_results.iloc[i]['match']))
     n_bikes = len(bikes)
     return render_template("output.html", bikes = bikes, n_bikes = n_bikes, biketype_final = biketype, error_message = error_message)
