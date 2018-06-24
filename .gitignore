@@ -1,4 +1,8 @@
+*.pyc
+*.pem
+postgres_user
 data
-weights
+weights/bottleneck*
+weights/*y.npy
 figures
 ebay.yaml
