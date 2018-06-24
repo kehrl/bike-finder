@@ -13,11 +13,11 @@ from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import load_img
 from keras.preprocessing.image import ImageDataGenerator
 
-def get_bottleneck_features(image_files, dir='data/'):
+def get_bottleneck_features(image_files, dir='data/', model_name='vgg16'):
     print('Getting bottleneck features...')
 
-    model = VGG16(weights="imagenet", include_top = False)
-    image_shape = (224, 224)
+    model = InceptionV3(weights="imagenet", include_top = False)
+    image_shape = (299, 299)
 
     datagen = ImageDataGenerator(
         rescale=1./255,
@@ -36,6 +36,7 @@ def get_bottleneck_features(image_files, dir='data/'):
         image = np.expand_dims(image, axis=0)
         images[i] = image
     
+    print(images)
     bottleneck_features = model.predict_generator(datagen.flow(images, shuffle = False))
             
     return bottleneck_features
@@ -67,7 +68,7 @@ def intermediate_model_features(bottleneck_features, top_model_path='model.best.
     model = keras.models.load_model(top_model_path)
 
     intermediate_layer_model = Model(inputs=model.input, \
-        outputs=model.get_layer('dense_11').output)
+        outputs=model.get_layer('flatten_last').output)
         
     intermediate_features = intermediate_layer_model.predict(bottleneck_features)
 
