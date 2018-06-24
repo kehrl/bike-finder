@@ -38,8 +38,12 @@ host = 'localhost'
 main_data_dir = '/Users/kehrl/Code/bike-finder/data/'
 
 # Model inputs
-model_name = 'vgg16'
-image_shape = (224, 224)
+model_name = 'inception'
+
+if model_name == 'vgg16':
+    image_shape = (224, 224)
+elif model_name == 'inception':
+    image_shape = (299, 299)
 top_model_path = 'model.best.hdf5'
 bike_labels = list(np.load("weights/train_labels.npy")[()])
 
@@ -97,7 +101,7 @@ def get_bottleneck_features(network, image_files, image_shape):
         image = np.expand_dims(image, axis=0)
         images[i] = image
     
-    bottleneck_features = model.predict_generator(datagen.flow(images, shuffle = False))
+    bottleneck_features = model.predict_generator(datagen.flow(images, shuffle=False), verbose=1)
         
     return bottleneck_features
 
