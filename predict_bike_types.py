@@ -35,7 +35,7 @@ user = open('postgres_user','r').readlines()[0].split()[0]
 host = 'localhost'
 
 # Data directory
-main_data_dir = '/Users/kehrl/Code/bike-finder/data/'
+main_data_dir = 'data/'
 
 # Model inputs
 model_name = 'inception'
@@ -50,7 +50,7 @@ bike_labels = list(np.load("weights/train_labels.npy")[()])
 # Get current postings
 dbname = 'bike_db'
 engine = create_engine('postgres://%s@localhost/%s'%(user,dbname))
-con = psycopg2.connect(database = dbname, user = 'kehrl')
+con = psycopg2.connect(database=dbname, user=user)
 current_postings = pd.read_sql('SELECT * FROM current_craigslist_postings', con = con)
 old_predicted_postings = pd.read_sql('SELECT * FROM predicted_postings', con = con)
 con.close()
