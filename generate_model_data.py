@@ -1,5 +1,11 @@
 #!/usr/bin/env python 
 
+'''
+Script generates training and test data for CNN model training. 
+
+Laura Kehrl
+'''
+
 import pandas as pd
 import numpy as np
 import psycopg2
@@ -8,7 +14,7 @@ import shutil
 # import imagelib
 
 # Inputs
-n_train = 2000 # per bike category
+n_train = 2150 # per bike category
 n_test = 75
 
 # Output dirs
@@ -18,6 +24,16 @@ test_data_dir  = main_dir+'test/'
 
 def save_images_by_category(category, labeled_data, data_dir, train_dir, test_dir, \
           n_train = 200, n_test = 20):
+
+    '''
+    images_train, images_test = save_images_by_category(category, labeled_data, 
+          data_dir, train_dir, test_dir, n_train = 200, n_test = 20)
+          
+    Get images a given 'category' (label) in 'labeled_data' and save n_train and n_test 
+    images. If n_train + n_test is greater than the number of available images,
+    then we create duplicate images in the training set which will be modified during 
+    training to produce additional, augmented images.
+    '''
     
     # Create directories
     os.makedirs(train_data_dir+category)
