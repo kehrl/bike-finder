@@ -1,6 +1,8 @@
 *.pyc
 *.pem
 postgres_user
+postgres_passwd
+uploads
 data
 weights/bottleneck*
 weights/*y.npy
