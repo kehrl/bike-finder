@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+'''
+Use transfer learning to train a model to identify n_classes categories of
+bikes.
+
+Laura Kehrl
+'''
+
 
 # ImageNet classifications:
 # - bicycle-built-for-two, tandem bicycle, tandem
@@ -12,7 +19,7 @@ from keras.applications import InceptionV3
 from keras.applications import VGG16
 from keras.models import Sequential
 from keras.utils import to_categorical
-from keras.layers import Dropout, Flatten, Dense
+from keras.layers import Dropout, Flatten, Dense, AveragePooling2D
 from keras import optimizers
 from keras.preprocessing.image import ImageDataGenerator
 from keras.applications import imagenet_utils
@@ -36,10 +43,9 @@ test_data_dir  = main_dir+'/test/'
 n_classes = len(os.listdir(train_data_dir))
 
 # Model inputs
-model_name = 'vgg16'
-batch_size = 10
-epochs = 50
-top_model_weights_path = 'weights/my_model'
+model_name = 'inception'
+batch_size = 32
+epochs = 500
 
 # Dictionary of models
 model_options = {
@@ -54,7 +60,11 @@ elif model_name == 'vgg16':
 
 def save_bottleneck_features(network, image_shape, batch_size, test_data_dir, train_data_dir):
     ''' 
-    Saves bottleneck features for testing and training.
+    train_data, test_data, train_y, train_labels, test_y = save_bottleneck_features(network, 
+          image_shape, batch_size, test_data_dir, train_data_dir)
+          
+    Saves bottleneck features from last max pool layer in CNN for testing and 
+    training. 
     '''
     print('\n Saving Bottleneck Features...')
 
@@ -115,37 +125,46 @@ def save_bottleneck_features(network, image_shape, batch_size, test_data_dir, tr
         
     return train_data, test_data, train_y, train_labels, test_y
 
-def train_top_model(train_data, train_y, test_data, test_y, n_classes, top_model_weights_path):
+def train_top_model(train_data, train_y, test_data, test_y, n_classes):
     ''' 
-    Train top layer with bottleneck features as input
+    model, history = train_top_model(train_data, train_y, test_data, test_y, 
+          n_classes)
+    
+    Train top layer with bottleneck features as input.
     '''
 
     print('\n Training the FC Layers...')
    
     model = Sequential()
-    model.add(Flatten(input_shape = train_data.shape[1:]))
-    model.add(Dense(256, activation = 'relu', name = 'dense_11'))
-    model.add(Dropout(0.5))
-    model.add(Dense(n_classes, activation = 'softmax'))
+    
+    #VGG-16
+    #model.add(Flatten(input_shape=train_data.shape[1:]))
+    #model.add(Dense(4096, activation='relu',name='fc1'))
+    #model.add(Dropout(0.5))
+    #model.add(Dense(2048, activation='relu',name='fc2'))
+    #model.add(Dropout(0.5))
+    
+    #Inception
+    model.add(AveragePooling2D((8, 8), input_shape=train_data.shape[1:], padding='valid', name='avg_pool'))
+    model.add(Dropout(0.1))
+    model.add(Flatten(name='flatten_last'))
+    model.add(Dense(n_classes, activation='softmax', name='pred'))
 
-    opt = optimizers.RMSprop(lr=2e-4)
-    model.compile(optimizer = opt, loss = 'categorical_crossentropy',
-                 metrics = ['accuracy'])
+    opt = optimizers.Adam(lr=2e-4, epsilon=0.1)
+    model.compile(optimizer=opt, loss='categorical_crossentropy',
+                 metrics=['accuracy'])
 
     checkpointer = ModelCheckpoint(filepath='model.best.hdf5', verbose=1, save_best_only=False)
    
     history = model.fit(train_data, train_y,
              epochs=epochs,
              batch_size=batch_size,
-             validation_data = [test_data, test_y],
-             callbacks = [checkpointer])
-    
-    # Save model results for predictions
-    model.save_weights(top_model_weights_path)
+             validation_data=[test_data, test_y],
+             callbacks=[checkpointer])
 
     return model, history  
 
-if __name__ == "__main__":
+if True:
 
     if (not os.path.isfile('weights/bottleneck_features_train.npy')) or (not os.path.isfile('weights/bottleneck_features_test.npy')):
         train_data, test_data, train_y, train_labels, test_y = \
@@ -158,7 +177,7 @@ if __name__ == "__main__":
         test_y = np.load('weights/test_y.npy') 
         train_labels = np.load('weights/train_labels.npy')
 
-    model, history = train_top_model(train_data, train_y, test_data, test_y, n_classes, top_model_weights_path)
+    model, history = train_top_model(train_data, train_y, test_data, test_y, n_classes)
 
     # Make some plots
     # Loss over epochs
@@ -174,7 +193,8 @@ if __name__ == "__main__":
     plt.close()
 
     # ROC curve
-    matplotlib.rc('font',size=22)
+    plt.figure(figsize=(4.85,4.5))
+    matplotlib.rc('font',size=24)
     # Compute macro-averaged ROC
     pred_y = model.predict(test_data)
     fpr = dict()
@@ -193,11 +213,14 @@ if __name__ == "__main__":
     auc_mean = auc(mean_fpr, mean_tpr)
     print("AUC is", auc_mean)
 
-    plt.plot([0, 1], [0, 1], 'k--', lw=2)
-    plt.plot(np.r_[0, mean_fpr], np.r_[0, mean_tpr], lw=3, color = 'b')
-
-    plt.subplots_adjust(top = 0.98, bottom = 0.15, left = 0.15, right = 0.94)
-    plt.ylabel('True positive rate'); plt.xlabel('False positive rate')
-    plt.xlim([-0.01, 1]); plt.ylim([0,1.01])
-    plt.savefig('figures/ROC.png', format = 'PNG')
+    plt.plot([-0.01, 1.01], [-0.01, 1.01], 'k--', lw=2)
+    plt.plot(np.r_[0, mean_fpr], np.r_[0, mean_tpr], lw=3, color='b')
+    plt.xticks(np.arange(0,1.1,0.2),fontname='Arial')
+    plt.yticks(np.arange(0,1.1,0.2),fontname='Arial')
+    plt.axis('equal')
+    plt.xlim([-0.01, 1.01]); plt.ylim([-0.01,1.01])
+    plt.ylabel('True positive rate', fontname='Arial')
+    plt.xlabel('False positive rate', fontname='Arial')
+    plt.subplots_adjust(top=0.98, bottom=0.17, left=0.2, right=0.95)
+    plt.savefig('figures/ROC.png', format = 'PNG', dpi=400)
     plt.close()
