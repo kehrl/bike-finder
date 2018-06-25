@@ -1,20 +1,30 @@
 from werkzeug.utils import secure_filename
+from keras.applications import InceptionV3
+from keras.preprocessing.image import img_to_array, load_img
+import keras
+import numpy as np
 from flask import render_template
 from flask import request
 from flasklib import app
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 import pandas as pd
+import tensorflow as tf
 import psycopg2
-from flasklib import bikelib
 import os
 
 user = open('postgres_user','r').readlines()[0].split()[0]          
+passwd = passwd = open('postgres_passwd','r').readlines()[0].split()[0]
 host = 'localhost'
 dbname = 'bike_db'
 db = create_engine('postgres://%s%s/%s'%(user,host,dbname))
 con = None
-con = psycopg2.connect(database = dbname, user = user)
+con = psycopg2.connect(database=dbname, user=user, password=passwd)
+
+graph = tf.get_default_graph()
+model = InceptionV3(weights='imagenet', include_top=False)
+top_model = keras.models.load_model('model.best.hdf5')
+bike_labels=np.sort(list(np.load("weights/train_labels.npy")[()]))
 
 @app.route('/')
 @app.route('/index')
@@ -70,22 +80,26 @@ def cesareans_output():
             image_name = secure_filename(image_file.filename)
         
             image_path = 'uploads/'+image_name
-            image_file.save(image_path)
-        
-            biketype = bikelib.predict_bike_type(image_path, dir='')
+            image_file.save(image_path)        
+            
+            image = load_img(image_path, target_size=(299, 299))
+            image = img_to_array(image)
+            image = np.expand_dims(image, axis=0)*(1./255)
+            
+            global graph, bike_labels
+            with graph.as_default():
+                pred = model.predict(image)
+                pred = top_model.predict(pred)
+            biketype = bike_labels[np.argmax(pred)]
     
-    if biketype == 'other':
-        error_message = "I can't find any matches. Please try another bike image."
     if biketype == 'None selected':
         error_message = "A bike type or image file must be selected."
+    elif biketype == 'other':
+        error_message = "I can't find any matches. Please try another bike image."
+        biketype = 'None selected'
     else:
         error_message = ''
-    print("Error",error_message)
-        
-    print(request.method)
-    print(biketype)
     
-    #print('imagefile',len(imagefile))
     #Select the desired bike type from the bike database
     query = 'SELECT title, biketype, price, match, description, timeposted, imagefile, "imageURL", "URL" FROM predicted_postings WHERE biketype=%s ORDER BY match DESC;' % (str("'"+biketype+"'"))
     query_results = pd.read_sql_query(query,con)
