@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+'''
+Scrape new Craigslist postings with BeautifulSoup and delete old ones.
+
+Laura Kehrl
+'''
+
 from bs4 import BeautifulSoup
 import urllib3, urllib
 import requests
@@ -88,6 +94,11 @@ def remove_deleted_attrs(deleted_posting_URLs, city):
         for line in lines:
             if line.split(',')[2].replace(' ','') in deleted_posting_URLs:
                 print("Deleting",line.split(',')[2].replace(' ','')) 
+                try:
+                    os.remove('data/'+line.split(',')[4])
+                    print("Deleting file",('data/'+line.split(',')[4]))
+                except:
+                    pass
             else:
                 fid.write(line)
         fid.close()
@@ -123,7 +134,7 @@ def get_new_posting_attrs(posting_URLs, city, slp_min = 30, slp_max = 45, get_im
     print("Starting at image",j)
 
     
-    for i in range(0,100):
+    for i in range(0,200):
         print("Posting",i,"of",n_items)
         fid = open('data/'+city+'_craigslist_postings_current.csv','a')
         time.sleep(np.random.randint(slp_min,slp_max) + np.random.rand())
