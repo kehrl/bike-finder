@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 import pandas as pd
 import tensorflow as tf
+import datetime
 import psycopg2
 import os
 
@@ -39,7 +40,11 @@ def bike_page():
                 SELECT * FROM predicted_postings \
 ;                                                                               
                 """
+    global dbname, user, passwd
+    con = psycopg2.connect(database=dbname, user=user, password=passwd)
     query_results = pd.read_sql_query(sql_query,con)
+    con.close
+
     bikes = ""
     print(query_results[:10])
     for i in range(0,10):
@@ -50,7 +55,12 @@ def bike_page():
 @app.route('/db_fancy')
 def cesareans_page_fancy():
     sql_query = 'SELECT title, biketype, price, match, timeposted, "imageURL", "URL" FROM predicted_postings ORDER BY match DESC;'
+    
+    global dbname, user, passwd
+    con = psycopg2.connect(database=dbname, user=user, password=passwd)
     query_results = pd.read_sql_query(sql_query,con)
+    con.close()
+
     bikes = []
     for i in range(0,query_results.shape[0]):
         bikes.append(dict(title=query_results.iloc[i]['title'], \
@@ -102,19 +112,24 @@ def cesareans_output():
     
     #Select the desired bike type from the bike database
     query = 'SELECT title, biketype, price, match, description, timeposted, imagefile, "imageURL", "URL" FROM predicted_postings WHERE biketype=%s ORDER BY match DESC;' % (str("'"+biketype+"'"))
+
+    global dbname, user, passwd
+    con = psycopg2.connect(database=dbname, user=user, password=passwd)
     query_results = pd.read_sql_query(query,con)
-    
+    con.close()    
+
     print(query_results)
     bikes = []
     for i in range(0,query_results.shape[0]):
         if (searchterm == '') or (searchterm.lower() in query_results.iloc[i]['title'].lower()) or (searchterm.lower() in query_results.iloc[i]['description'].lower()):
+            timeposted = datetime.datetime.strptime(query_results.iloc[i]['timeposted'], ' %Y-%m-%d %I:%M%p')
             bikes.append(dict(title=query_results.iloc[i]['title'], \
                 imageURL=query_results.iloc[i]['imageURL'], \
                 price=query_results.iloc[i]['price'], \
                 URL=query_results.iloc[i]['URL'], \
                 imagefile=query_results.iloc[i]['imagefile'], \
-                timeposted=query_results.iloc[i]['timeposted'], \
-                match=query_results.iloc[i]['match']))
+                timeposted=timeposted.strftime('%Y-%m-%d %H:%M'), \
+                match=int(np.round(query_results.iloc[i]['match']))))
     n_bikes = len(bikes)
     return render_template("output.html", bikes = bikes, n_bikes = n_bikes, biketype_final = biketype, error_message = error_message)
 
