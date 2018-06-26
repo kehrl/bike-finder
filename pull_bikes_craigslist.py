@@ -95,8 +95,8 @@ def remove_deleted_attrs(deleted_posting_URLs, city):
             if line.split(',')[2].replace(' ','') in deleted_posting_URLs:
                 print("Deleting",line.split(',')[2].replace(' ','')) 
                 try:
-                    os.remove('data/'+line.split(',')[4])
-                    print("Deleting file",('data/'+line.split(',')[4]))
+                    os.remove('data/'+line.split(',')[4].strip())
+                    print("Deleting file",('data/'+line.split(',')[4].strip()))
                 except:
                     pass
             else:
@@ -117,7 +117,8 @@ def get_new_posting_attrs(posting_URLs, city, slp_min = 30, slp_max = 45, get_im
     
     if not(os.path.exists('data/'+city+'_craigslist_postings_current.csv')):
         fid = open('data/'+city+'_craigslist_postings_current.csv','w')
-        for key in bike_attrs.keys():
+        for key in ['title','price','URL','imageURL','imagefile','description',\
+                'timeposted','latitude','longitude','biketype']:
             fid.write(key+',')
         fid.write('\n')
         fid.close()   
@@ -134,7 +135,7 @@ def get_new_posting_attrs(posting_URLs, city, slp_min = 30, slp_max = 45, get_im
     print("Starting at image",j)
 
     
-    for i in range(0,200):
+    for i in range(0,100):
         print("Posting",i,"of",n_items)
         fid = open('data/'+city+'_craigslist_postings_current.csv','a')
         time.sleep(np.random.randint(slp_min,slp_max) + np.random.rand())
@@ -185,7 +186,8 @@ def get_new_posting_attrs(posting_URLs, city, slp_min = 30, slp_max = 45, get_im
             
             bike_attrs['biketype'].append('')
 
-            for key in bike_attrs.keys():
+            for key in ['title','price','URL','imageURL','imagefile','description',\
+                	'timeposted','latitude','longitude','biketype']:
                 fid.write(bike_attrs[key][-1]+', ')
             fid.write('\n')
                     
