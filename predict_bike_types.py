@@ -61,9 +61,8 @@ current_predicted_postings = pd.merge(current_postings[['title','price', 'URL', 
         old_predicted_postings[['URL','biketype', 'match']], how='left', on=['URL'])
 current_predicted_postings.drop_duplicates(subset='URL', inplace=True)
 ind_unlabeled = np.where(current_predicted_postings.biketype.isnull())[0]
-print(len(ind_unlabeled))
-if len(ind_unlabeled) > 200:
-    ind_unlabeled = ind_unlabeled[0:200]
+if len(ind_unlabeled) > 100:
+    ind_unlabeled = ind_unlabeled[0:100]
 image_files = np.array(current_predicted_postings.loc[ind_unlabeled,'imagefile'])
 
 # Dictionary of models
