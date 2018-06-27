@@ -21,5 +21,5 @@ def update_bikes():
 
 update_bikes()
 scheduler = BlockingScheduler()
-scheduler.add_job(update_bikes, 'interval', hours=4)
+scheduler.add_job(update_bikes, 'interval', hours=3)
 scheduler.start()
