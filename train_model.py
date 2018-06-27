@@ -203,18 +203,22 @@ if True:
     for i in range(n_classes):
         fpr[i], tpr[i], thresholds = roc_curve(test_y[:, i], pred_y[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
+        
     # First aggregate all false positive rates
     mean_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
     mean_tpr = np.zeros_like(mean_fpr)
     for i in range(n_classes):
         mean_tpr += interp(mean_fpr, fpr[i], tpr[i])
+        
     # Finally average it and compute AUC
     mean_tpr /= n_classes
     auc_mean = auc(mean_fpr, mean_tpr)
     print("AUC is", auc_mean)
 
     plt.plot([-0.01, 1.01], [-0.01, 1.01], 'k--', lw=2)
-    plt.plot(np.r_[0, mean_fpr], np.r_[0, mean_tpr], lw=3, color='b')
+    for key in fpr.keys():
+        plt.plot(fpr[key], tpr[key], c='0.7')
+    #plt.plot(np.r_[0, mean_fpr], np.r_[0, mean_tpr], lw=3, color='b')
     plt.xticks(np.arange(0,1.1,0.2),fontname='Arial')
     plt.yticks(np.arange(0,1.1,0.2),fontname='Arial')
     plt.axis('equal')
