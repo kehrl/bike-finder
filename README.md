@@ -16,7 +16,7 @@ Code developed as a fellow at Insight Data Science.
 - `pull_bikes_craigslist.py` - scrape Craigslist postings
 - `pull_bikes_ebay.py` - pull Ebay postings using Ebay API
 - `save_postings.py` - save scraped and pulled postings into a PostgreSQL database
-- `train_model.py` - extract imagefeatures from CNN and train last layer + classifier
+- `train_model.py` - extract image features from CNN and train last layer + classifier
 - `update_bikes_auto.py` - automatically scrape and label new Craigslist postings every three hours
 - `validate_against_text.py` - compare search results for different bike types using a text search and new PicABike search
 
