@@ -43,7 +43,7 @@
             <span class="icon-bar"></span>
           </button>
           <a class="navbar-left"><img style="width:80px; margin-top:10px" src="https://cbey.yale.edu/sites/default/files/styles/page_hero/public/Bike%20City-logo%20%281%29.png?itok=VNSmaJRx&c=120d7cdfa51cc42b73af1e8b9ff3980a"></a>
-          <a class="navbar-brand text-info" style="color: #00C851">PicABike</a>
+          <a class="navbar-brand text-info" style="color: #40c151">PicABike</a>
       </div>
       <div id="navbar" class="collapse navbar-collapse">
       <ul class="nav navbar-nav">
@@ -57,8 +57,11 @@
     <div class="container">
 
       <div class="starter-template">
-        <p class="lead"><h2><em>How does PicABike work?</em></h2><br></p>
-	<p> Many bikes are unlabeled or mislabeled on Craigslist, making it difficult to search for a bike. A simple text search for "road bike" will likely return a posting for "road bike shoes" but may not return a posting with a detailed description of an actual road bike. In regions where biking is popular, such as Seattle, over 3,000 bikes are available on Craigslist. Even if the user only spends half a second on each posting, that is still 25 minutes of lost time. To solve this problem, I developed PicABike, which uses the images in the postings to identify the bike type, making it easier for the user to "pic" the perfect bike. </p>
+        <p class="lead"><h2><em>Why PicABike?</em></h2></p>
+        <p> Many bikes are unlabeled or mislabeled on Craigslist. A simple text search for "road bike" will likely return a posting for "road bike shoes" but may not return a posting with a detailed description of an actual road bike. As a result, most users look through all postings to find a bike. In regions where biking is popular, such as Seattle, that can mean looking through over 3,000 bike postings; even if the user only spends half a second on each posting, that is still 25 minutes of lost time. To solve this problem, I developed PicABike, which uses the images in the postings to identify the bike type, making it easier for the user to "pic" the perfect bike. </p> 
+        <p class="lead"><h2><em>How does PicABike work?</em></h2></p>
+        <p> PicABike uses a convolutional neural network trained on 15,000 images of bikes from Craigslist, Ebay, and PinkBike to identify bike type from the posted image. New bike postings are scraped from Craigslist every three hours, labeled by bike type using the above algorithm, and added to the PicABike website.</p>
+        <p> More information is available at PicABike's <a target="_blank" href=https://github.com/kehrl/bike-finder>Github page</a>.</p> 
       </div>
 
 
