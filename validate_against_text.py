@@ -1,5 +1,13 @@
 #!/usr/bin/env python 
 
+'''
+Compare percentage of bikes labeled by text vs image in test set. This 
+gives us a sense of the improvement of the algorithm compared to a simple
+keyword search on Craigslist.
+
+Laura Kehrl
+'''
+
 from sqlalchemy import create_engine
 import psycopg2
 import pandas as pd
@@ -34,6 +42,12 @@ labeled_df.drop(index=ind, inplace=True)
 
 def get_text_labels(labeled_df):
 
+    '''
+    labeled_df = get_text_labels(labeled_df)
+    
+    Get labels for bikes from the text in the Craigslist postings.
+    '''
+
     labeled_df['textlabel'] = ''
     for biketype in labeled_df.biketype.unique():
         labeled_df.loc[labeled_df.title.str.contains(biketype), 'textlabel'] = biketype  
@@ -41,6 +55,12 @@ def get_text_labels(labeled_df):
     return labeled_df
   
 def get_picture_labels(labeled_df, top_model_path='model.best.hdf5'):
+
+    '''
+    labeled_df = get_picture_labels(labeled_df, top_model_path='model.best.hdf5')
+    
+    Get labels for bikes from the image in the Craigslist postings.
+    '''
 
     # Load top model
     model = keras.models.load_model(top_model_path)    
@@ -56,6 +76,14 @@ def get_picture_labels(labeled_df, top_model_path='model.best.hdf5'):
     return labeled_df
 
 def get_categorical_accuracy(true_labels, predicted_labels, labels):
+
+    '''
+    accuracy, precision, tpr, tnr = get_categorical_accuracy(true_labels, 
+          predicted_labels, labels)
+          
+    Calculate accuracy, precision, true positive rate, and true negative rate
+    for bikes labeled by text and image.
+    '''
     
     tp, fp, tn, fn = 0.0, 0.0, 0.0, 0.0
     for label in labels:
@@ -72,15 +100,16 @@ def get_categorical_accuracy(true_labels, predicted_labels, labels):
 
     return accuracy, precision, tpr, tnr
 
+if __name__ == "__main__":
+    
+    # Get labels based on text  
+    labeled_df = get_text_labels(labeled_df)
 
-# Get labels based on text  
-labeled_df = get_text_labels(labeled_df)
+    # Get labels based on images
+    labeled_df = get_picture_labels(labeled_df)
 
-# Get labels based on images
-labeled_df = get_picture_labels(labeled_df)
+    # Get stats for the two approaches to categorizing bikes
+    labels = ['road', 'mountain', 'kids', 'bmx', 'cruiser', 'tandem']
+    acc_text, prec_text, tpr_text, tnr_text = get_categorical_accuracy(labeled_df['biketype'], labeled_df['textlabel'], labels)
 
-# Get stats for the two approaches to categorizing bikes
-labels = ['road', 'mountain', 'kids', 'bmx', 'cruiser', 'tandem']
-acc_text, prec_text, tpr_text, tnr_text = get_categorical_accuracy(labeled_df['biketype'], labeled_df['textlabel'], labels)
-
-acc_image, prec_image, tpr_image, tnr_image = get_categorical_accuracy(labeled_df['biketype'], labeled_df['imagelabel'], labels) 
+    acc_image, prec_image, tpr_image, tnr_image = get_categorical_accuracy(labeled_df['biketype'], labeled_df['imagelabel'], labels) 
