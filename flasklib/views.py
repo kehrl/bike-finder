@@ -54,7 +54,7 @@ def bike_page():
 
 @app.route('/db_fancy')
 def cesareans_page_fancy():
-    sql_query = 'SELECT title, biketype, price, match, timeposted, "imageURL", "URL" FROM predicted_postings ORDER BY match DESC;'
+    sql_query = 'SELECT title, biketype, price, match, timeposted, "imageURL", "URL" FROM predicted_postings ORDER BY match DESC, timeposted DESC;'
     
     global dbname, user, passwd
     con = psycopg2.connect(database=dbname, user=user, password=passwd)
@@ -111,17 +111,28 @@ def cesareans_output():
         error_message = ''
     
     #Select the desired bike type from the bike database
-    query = 'SELECT title, biketype, price, match, description, timeposted, imagefile, "imageURL", "URL" FROM predicted_postings WHERE biketype=%s ORDER BY match DESC;' % (str("'"+biketype+"'"))
+    query = 'SELECT title, biketype, price, match, description, timeposted, imagefile, "imageURL", "URL" FROM predicted_postings WHERE biketype=%s ORDER BY match DESC, timeposted DESC;' % (str("'"+biketype+"'"))
 
     global dbname, user, passwd
     con = psycopg2.connect(database=dbname, user=user, password=passwd)
     query_results = pd.read_sql_query(query,con)
     con.close()    
 
-    print(query_results)
+    # Set up search term criterion 
+    if searchterm.startswith('"') and searchterm.endswith('"'):
+        terms = [searchterm[1:-1].lower()]
+    else:
+        terms = searchterm.lower().split()
+
     bikes = []
     for i in range(0,query_results.shape[0]):
-        if (searchterm == '') or (searchterm.lower() in query_results.iloc[i]['title'].lower()) or (searchterm.lower() in query_results.iloc[i]['description'].lower()):
+        match_search_term = True
+        for term in terms:
+            if (term in query_results.iloc[i]['title'] or term in query_results.iloc[i]['description']) and (match_search_term == True):
+                match_search_term = True
+            else:
+                match_search_term = False
+        if (searchterm == '') or match_search_term == True:
             timeposted = datetime.datetime.strptime(query_results.iloc[i]['timeposted'], ' %Y-%m-%d %I:%M%p')
             bikes.append(dict(title=query_results.iloc[i]['title'], \
                 imageURL=query_results.iloc[i]['imageURL'], \
