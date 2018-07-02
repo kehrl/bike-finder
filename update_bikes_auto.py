@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+'''
+Script to automatically update SQL database with new, LABELED bike postings and delete old ones.
+
+Laura Kehrl 
+'''
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 import datetime
