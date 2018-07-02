@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+'''
+Scrape new Ebay bike postings.
+
+Laura Kehrl
+''' 
+
 import ebaysdk
 from ebaysdk.finding import Connection as Finding
 from ebaysdk.exception import ConnectionError
